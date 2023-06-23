@@ -1,2 +1,2 @@
-# EntittFrameworkCoreEgitimi
+# Entity Framework Core Egitimi
  
