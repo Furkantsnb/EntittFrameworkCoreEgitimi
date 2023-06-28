@@ -1242,3 +1242,152 @@ namespace Lesson13
         }
     }
 }
+
+
+# Entity Framework Core Ders 19
+
+using Microsoft.EntityFrameworkCore;  
+
+using System.Collections.Generic;  
+
+using System.Reflection.Emit;  
+
+
+namespace Lesson19  
+
+{  
+
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Hello, World!");
+        }
+        static async void Islemler()
+        {
+            EticaterContext context = new();
+
+            #region Change Tracking Neydi?
+            //Context nesnesi üzerinden gelen tüm nesneler/veriler otomatik olarak bir takip mekanizması tarafından izlenirler.
+            //İşte bu takip mekanizmasına Change Tracker denir. Traker ile nesneler üzerindeki değişiklikler/işlemler takip edilerek
+            //netice itibariyle bu işlemlerin fıtratına uygun sql sorgucukları generate edilir. İşte bu işleme de Change Trackin denir.
+            #endregion
+
+            #region ChangeTracker Propertysi
+            // Takip edilen nesnelere erişebilmemizi sağlaan ve gerektiği taktirde işlemler gerçekleştirmemizi sağlayan bir propertydir.
+            //Context sınıfının base class'ı olan DbContext sınıfının bir memner'ıdır.
+
+            var urunler = await context.Urunler.ToListAsync();
+            urunler[6].Fiyat = 123; // Update 
+            context.Urunler.Remove(urunler[7]); //Delete
+            urunler[8].UrunAdi = "zxczxc";//Update
+
+            var date = context.ChangeTracker.Entries();
+
+            #region DetecChanges Metodu
+            /*
+              
+             * EF Core, context mesmesi tarafından izlenen tüm nesnelerdeki değişiklikleri Change Tracker sayesinde takip
+               edebilmek ve nesnelerde olan verisel değişiklikleri yakalanarak bunların anlık görüntüleri(snapshot)' ini 
+               oluşturabilir.
+              
+             * Yapılan değişikliklerin veri tabanına gönderilmeden önce algılandığından emin olmak gerekir. SaceChanges
+               fonksiyonu çağrıldığı anda nesneler EF Coretrafından otomatik kontrol edilirler.
+              
+             * Ancak, yapılan operasyonlarda güncel tracking verilerinden emin olabilmek için değişiklerin algılanmasını opsiyonel
+               olarak gerçekleştirmek isteyebiliriz. işte bunun için DetectChanges fonksiyonu kullanılabilir be her ne kadar Ef Core
+               değilikleri otomatik algılıyor olsa da siz yine de iradenizle kontrole zorlayabilirsiniz
+               
+              */
+
+            var urun = await context.Urunler.FirstOrDefaultAsync();
+            urun.Fiyat = 123;
+
+            context.ChangeTracker.DetectChanges();
+            await context.SaveChangesAsync();
+
+            #endregion
+
+            #region AutoDetectChangesEnabled Property'si
+            /*
+             
+             * İlgili metotları(SaveChanges, Entries) tarafından DetectChanges metotdunun otomatik olarak tekiklenmesi
+               konfigürasyonunu yapmamızı sağlayan propertydir.
+               
+             * SaveChanges fonksiyonu tetiklendiğinde DetectChanges metodunu içerisinde default olarak çağırmaktadır.
+               Bu durumda DetectChanges fonksiyonunun kullanımını irademizle yönetmek ve maliyer/performans optimizasyonu
+               yapmak istediğimiz durumlarda AutoDetectChangesEnabled özelliğini kapatabiliriz.
+              
+            */
+            #endregion
+
+            #region Entries Metodu
+            /*
+             - Context' te ki Entry metotdunun koleksiyonel versiyonudurç
+             -Change Tracker mekanizması tarafından izlenen her entity nesnesinin bilgisini EntityEntry türümden
+             
+             */
+            #endregion
+
+            #region AccepAllChanges Metodu
+            #endregion
+
+            #region HasChanges Metodu
+            #endregion
+            #endregion
+
+            #region
+            #endregion
+        }
+        public class EticaterContext : DbContext
+        {
+            public DbSet<Urun> Urunler { get; set; }
+            public DbSet<Parca> Parcalar { get; set; }
+            public DbSet<UrunParca> urunParca { get; set; }
+
+
+
+            protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+            {
+                // Provider
+                //ConnectionString
+                //Lazy Loading
+                //vb. amaçlar için kullanır.
+
+                optionsBuilder.UseSqlServer("Server= localhost,1433;Database=ECommerceDb;User Id sa;Passoword =1q2w3e4r+!");
+            }
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
+            {
+                modelBuilder.Entity<UrunParca>().HasKey(up => new { up.UrunId, up.ParcaId });
+            }
+        }
+
+
+        public class Urun
+        {
+            public int Id { get; set; }
+            public string UrunAdi { get; set; }
+            public float Fiyat { get; set; }
+            public ICollection<Parca> Parcalar { get; set; }
+        }
+        public class Parca
+        {
+            public int Id { get; set; }
+            public string ParcaAdi { get; set; }
+
+
+        }
+        public class UrunParca
+        {
+            public int UrunId { get; set; }
+            public string ParcaId { get; set; }
+            public Urun Urun { get; set; }
+            public Parca Parca { get; set; }
+        }
+        public class UrunDetay
+        {
+            public int Id { get; set; }
+            public float Fiyat { get; set; }
+        }
+    }
+}
