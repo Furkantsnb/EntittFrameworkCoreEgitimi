@@ -1387,7 +1387,8 @@ namespace Lesson19
         public class UrunDetay
         {
             public int Id { get; set; }
-            public float Fiyat { get; set; }
+            public float Fiyat { get; set; 
+            }
         }
     }
 }
