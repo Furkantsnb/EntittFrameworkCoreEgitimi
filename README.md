@@ -1247,14 +1247,11 @@ namespace Lesson13
 # Entity Framework Core Ders 19
 
 using Microsoft.EntityFrameworkCore;  
-
 using System.Collections.Generic;  
-
 using System.Reflection.Emit;  
 
 
 namespace Lesson19  
-
 {  
 
     internal class Program
@@ -1324,19 +1321,150 @@ namespace Lesson19
             #region Entries Metodu
             /*
              - Context' te ki Entry metotdunun koleksiyonel versiyonudurç
-             -Change Tracker mekanizması tarafından izlenen her entity nesnesinin bilgisini EntityEntry türümden
+             - Change Tracker mekanizması tarafından izlenen her entity nesnesinin bilgisini EntityEntry türümden
+               elde etmemizi sağlar ve belirli işlemler yapabilmemize olanak tanır.
+            - Entries  metodu, DetectChanges metodunu tetikler. Bu durum da tıpkı SaveChanges' da olduğu gibi bir maliyettir.
+              Buradaki maliyetten kaçınmak için AutoDetectChangesEnabled özelliğine false değeri verilebilir.
+
              
              */
+
+            var urunler1 = await context.Urunler.ToListAsync();
+            urunler.FirstOrDefault(u => u.Id == 7).Fiyat = 123; //Update
+            context.Urunler.Remove(urunler.FirstOrDefault(u=>u.Id==8)); //Delete
+            urunler.FirstOrDefault(u => u.Id == 9).UrunAdi = "asdas";//Update
+
+            context.ChangeTracker.Entries().ToList().ForEach(e =>
+            {
+                if (e.State == EntityState.Unchanged)
+                {
+                    //:...
+                }
+                else if (e.State == EntityState.Deleted)
+                {
+                    //: ....
+                }
+
+            });
             #endregion
 
             #region AccepAllChanges Metodu
+            // SaveChanges() veya SaveChanges(true) tetiklendiğinde EF Core herşeyin yolunda olduğunu varsayarak track ettiği verilerin
+            // takibini keser yeni değişikliklerin takip edilmesini bekler. Böylece bir durumda beklenmeyen bir durum/ olası bir hata söz
+            // konusu olursa EF Core takip ettiği nesnelerin bırakacağı için bir düzeltme mevzu bahis olmayacaktır. 
+
+
+            //Haliyle bu durumda devreye SaveChanges(false) ve AcceptAllChanges metotları girecektir.
+
+            //SaveChanges(false), EF Core' a gerekli veritabanı komutlarını yürütmesini saöyler ancak gerektiğinde yeniden
+            //oynatılabilmesi için değilikleri beklemeye/nesneleri takip etmeye devam eder. taa ki AcceptAllChanges metodu 
+            //irademizle çağırana kadar.
+
+            //SaveChanges(false) ile işlemin başarılı olduğundan emin olursanız AccepAllChanges metodu ile nesnelerden takibi kesebilirsiniz
+
+            var urunler2 = await context.Urunler.ToListAsync();
+            urunler.FirstOrDefault(u => u.Id == 7).Fiyat = 123; //Update
+            context.Urunler.Remove(urunler.FirstOrDefault(u => u.Id == 8)); //Delete
+            urunler.FirstOrDefault(u => u.Id == 9).UrunAdi = "asdas";//Update
+
+            //await context.SaveChangesAsync();
+            //await context.SaveChangesAsync(true);
+
+            await context.SaveChangesAsync(false);
+            context.ChangeTracker.AcceptAllChanges();
+
+
             #endregion
 
             #region HasChanges Metodu
+            // Takip edilen nesneler arsından değişiklik olup olmadığını verir.
+            // Arka planda DeteChanges metodunu tetikler.
+            var result = context.ChangeTracker.HasChanges();
             #endregion
             #endregion
 
-            #region
+            #region Entity States
+            //Entity nesnelerini durumlarını ifade eder.
+
+            #region Detached
+            // Nesnelerin change tracker mekanizması tarafından takip edilmediğini ifade eder.
+            Urun urun1 = new();
+            Console.WriteLine(context.Entry(urun1).State);
+            urun1.UrunAdi = "fsadfas";
+            await context.SaveChangesAsync();
+
+            #endregion
+
+            #region Added
+            //Veri tabanına eklenecek nesneyi ifade eder. Added henüz veri tabanına işlenmeyen veriyi ifade eder.
+            //SaveChanges fonksiyonu çağrıldığında insert sorgusu oluşturucaği anlamına gelir.
+
+            Urun urun2 = new(){ Fiyat = 123, UrunAdi = "ürün 72"};
+            Console.WriteLine(context.Entry(urun2).State);
+            await context.Urunler.AddAsync(urun2); // Added
+            Console.WriteLine(context.Entry(urun2).State);
+            urun2.Fiyat = 72; //Modified
+            Console.WriteLine(context.Entry(urun2).State);
+            await context.SaveChangesAsync();
+            #endregion
+
+            #region Unchanged
+            // Veri tabanundan sorgulandığından beri nesne üzer,nde herhangi bir değişiklik yapılmadığını ifade eder. 
+            // Sorgu neticesinde elde edilen tüm nesneler başlangıçta bu state değerindedir. 
+
+            var urunler3 = await context.Urunler.ToListAsync();
+            var data1 = context.ChangeTracker.Entries();
+            #endregion
+
+            #region Modified
+            // Nesne üzerinde değişiklik/ güncelleme yapıldığını ifade eder. SaveChanges fonksiyonu çağrıldığında 
+            //update sorgusu oluşturacağı anlamına gelir.
+
+            var urun3 = await context.Urunler.FirstOrDefaultAsync(u => u.Id == 3);
+            Console.WriteLine(context.Entry(urun3).State);//Unchanged
+            urun3.UrunAdi = "sadas";
+            Console.WriteLine(context.Entry(urun3).State);//Modified
+            await context.SaveChangesAsync(); //Eger SaveChangesAsync(false); yaparsak Modified olur
+            Console.WriteLine(context.Entry(urun3).State);//Unchanged
+            #endregion
+
+            #region Deleted
+            // Nesnenin silindiğini ifade eder. Savechanges fonksiyonu çağrıldığında delete sorgusu oluşturulacağı anlamına gelir.
+
+            var urun4 = await context.Urunler.FirstOrDefaultAsync(u=> u.Id ==3);
+            context.Urunler.Remove(urun4);
+            context.SaveChangesAsync();
+            #endregion
+
+            #endregion
+
+            #region Context Nesne Üzerinden Tacker
+            //
+            var urun5 = await context.Urunler.FirstOrDefaultAsync(u=>u.Id ==72);
+            urun5.Fiyat = 123;
+            urun5.UrunAdi = "Halı"; //Modified | Update
+
+            #region Entry Metodu
+
+            #region OriginalValues Property'si
+            var fiyat = context.Entry(urun5).OriginalValues.GetValue<float>(nameof(urun5.Fiyat));
+            var urunAdi = context.Entry(urun5).OriginalValues.GetValue<string>(nameof(urun5.UrunAdi));
+            #endregion
+
+            #region CurrentValues Property' si
+            var urunAdi1 = context.Entry(urun5).CurrentValues.GetValue<string>(nameof(urun5.UrunAdi));// Mevcut değerini elde ettik
+            #endregion
+
+            #region GetDatabaseValues Metodu
+            var urunAdi2 = context.Entry(urun5).GetDatabaseValuesAsync();
+            #endregion
+
+            #endregion
+
+            #endregion
+
+            #region Change Track' ın Interceptor Olarak Kullanılması
+
             #endregion
         }
         public class EticaterContext : DbContext
@@ -1359,6 +1487,19 @@ namespace Lesson19
             protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
                 modelBuilder.Entity<UrunParca>().HasKey(up => new { up.UrunId, up.ParcaId });
+            }
+
+            public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+            {
+                var entries = ChangeTracker.Entries();
+                foreach(var entry in entries)
+                {
+                    if (entry.State == EntityState.Added)
+                    {
+
+                    }
+                }
+                return base.SaveChangesAsync(cancellationToken);
             }
         }
 
@@ -1387,8 +1528,7 @@ namespace Lesson19
         public class UrunDetay
         {
             public int Id { get; set; }
-            public float Fiyat { get; set; 
-            }
+            public float Fiyat { get; set; }
         }
     }
-}
+    }
