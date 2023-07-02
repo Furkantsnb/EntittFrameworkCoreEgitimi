@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Lesson13
 {
@@ -28,15 +29,15 @@ namespace Lesson13
             #endregion
             int urunId = 5;
             string urunAdi = "2";
-            var urunler3 = from urun in context.Urunler where urun.Id> urunId && urun.UrunAdi.Contains(urunAdi) select urun; // bu durum execute edilmeden çalışmıyor. Ertelenmiş çalışma olarak anlayabilirsin
-             urunId = 200; // Deferred Execution dolayı 200 den başlar 
+            var urunler3 = from urun in context.Urunler where urun.Id > urunId && urun.UrunAdi.Contains(urunAdi) select urun; // bu durum execute edilmeden çalışmıyor. Ertelenmiş çalışma olarak anlayabilirsin
+            urunId = 200; // Deferred Execution dolayı 200 den başlar 
             urunAdi = "4"; // Deferred Execution dolayı ürün adı 4 içerenleri alır. 
             foreach (Urun urun in urunler3)
             {
                 Console.WriteLine(urun.UrunAdi);
             }
 
-             await urunler3.ToListAsync(); //ile de aynı foreach gibi Deferred Execution sağlanıyor.
+            await urunler3.ToListAsync(); //ile de aynı foreach gibi Deferred Execution sağlanıyor.
             #region Foreach
             //foreach (Urun urun in urunler3)
             //{
@@ -58,7 +59,7 @@ namespace Lesson13
             //Üretilen sorguyu execute ettirmemizi sağlayan fonksiyondur.
 
             #region Method Syntax
-             var urunler4 = context.Urunler.ToListAsync();
+            var urunler4 = context.Urunler.ToListAsync();
             #endregion
 
             #region Query Syntax
@@ -73,13 +74,13 @@ namespace Lesson13
             #region Where Fonksiyonu
             //Oluşturulan sorguya where şartı eklemenizi sağlayan bir fonksiyondur.
             #region Methode Syntax
-           // var urunler7 = context.Urunler.Where(u => u.Id > 500).ToListAsync();
+            // var urunler7 = context.Urunler.Where(u => u.Id > 500).ToListAsync();
             var urunler7 = context.Urunler.Where(u => u.UrunAdi.StartsWith("a")).ToListAsync();
             #endregion
             #region Query Syntax
-            var urunler8= from urun in context.Urunler
-                          where urun.Id> 500 && urun.UrunAdi.EndsWith("7")
-                          select urun;
+            var urunler8 = from urun in context.Urunler
+                           where urun.Id > 500 && urun.UrunAdi.EndsWith("7")
+                           select urun;
             var data2 = await urunler8.ToListAsync();
             #endregion
             #endregion
@@ -100,14 +101,14 @@ namespace Lesson13
             await urunler10.ToListAsync();
             #region ThenBy Fonksiyonu
             // OrderBy üzerinden yapılan sıralama işlemini farklı kolonlara uygulamamızı sağlayan bir fonksiyondur. (Ascending)
-            var urunler11 = context.Urunler.Where(u => u.Id > 500 || u.UrunAdi.EndsWith("2")).OrderBy(u => u.UrunAdi).ThenBy(u=> u.Fiyat).ThenBy(u=> u.Id);
+            var urunler11 = context.Urunler.Where(u => u.Id > 500 || u.UrunAdi.EndsWith("2")).OrderBy(u => u.UrunAdi).ThenBy(u => u.Fiyat).ThenBy(u => u.Id);
             await urunler11.ToListAsync();
             #endregion
             #endregion
             #region OrderByDescending Fonksiyonu
             // Sıralma işlemlerinde descending olarak sıralama yapan bir donksiyondur
             #region Method Syntax
-            var urunler13 = await context.Urunler.OrderByDescending(u=> u.Fiyat).ToListAsync();
+            var urunler13 = await context.Urunler.OrderByDescending(u => u.Fiyat).ToListAsync();
             #endregion
             #region Query Syntax
             var urunler14 = await (from urun in context.Urunler
@@ -144,7 +145,7 @@ namespace Lesson13
             #endregion
             #region Hiç Kayıt Gelmediğinde
             var urun5 = await context.Urunler.SingleOrDefaultAsync(u => u.Id == 5555); //Id == 5555 olan urun olmadığı için null olarak döner
-          
+
             #endregion
             #region Çok kayıt Geldiğinde 
             var urun6 = await context.Urunler.SingleOrDefaultAsync(u => u.Id > 72);
@@ -158,7 +159,7 @@ namespace Lesson13
             // Sorgu neticesinde elde edilen verilerden ilkini getirir. Eğer ki veri gelmiyorsa hata fırlatır.
 
             #region Tek kayır Geldiğinde
-            var urun7 = await context.Urunler.FirstAsync(u=> u.Id ==55);// tek veri geliyorsa veri gelir.
+            var urun7 = await context.Urunler.FirstAsync(u => u.Id == 55);// tek veri geliyorsa veri gelir.
             #endregion
             #region Hiç Kayıt Gelmiyorsa
             var urun8 = await context.Urunler.FirstAsync(u => u.Id == 55555); // hata fırlatır.
@@ -205,7 +206,7 @@ namespace Lesson13
             var urun13 = await context.Urunler.FindAsync(55); // Find fomksiyonu kullanarak kısa bir şekilde ifade edebilirsin
 
             #region Composite Primary Key Durumu 
-            UrunParca u = await context.urunParca.FindAsync(2,5);
+            UrunParca u = await context.urunParca.FindAsync(2, 5);
             #endregion
             #endregion
 
@@ -275,7 +276,7 @@ namespace Lesson13
             #region AllAsync
             // Bir sorgu neticesinde gelen verilerin, verilen şarta uyup uymadığını kontrol etmektedir. 
             // Eğer ki tüm veriler şarta uyuyorsa true, uymuyorsa false dönecektir.
-            var fiyatt = context.Urunler.AllAsync(u=> u.Fiyat > 5000);
+            var fiyatt = context.Urunler.AllAsync(u => u.Fiyat > 5000);
 
             #endregion
 
@@ -328,22 +329,53 @@ namespace Lesson13
             // Select fonksiyonun işlecsel ola birden fazla davranışı söz konusudur.
 
             // 1-Select fonksiyonu, generate edilecek sorgunun çekilecek kolonlarını ayarlamamızı sağlamaktadır.
-            var urunlerrr3 = await context.Urunler.Select(u => new Urun { Id = u.Id, Fiyat = u.Fiyat}).ToListAsync();
+            var urunlerrr3 = await context.Urunler.Select(u => new Urun { Id = u.Id, Fiyat = u.Fiyat }).ToListAsync();
 
             //2- Select fonksiyonu, gelen verileri farklı türlerde karşılamamızı sağlar. T, anonim
 
             var urunlerrr4 = await context.Urunler.Select(u => new { Id = u.Id, Fiyat = u.Fiyat }).ToListAsync(); // anonim yapı
 
-            var urunlerrr5 = await context.Urunler.Select(u => new UrunDetay{ Id = u.Id, Fiyat = u.Fiyat }).ToListAsync();
+            var urunlerrr5 = await context.Urunler.Select(u => new UrunDetay { Id = u.Id, Fiyat = u.Fiyat }).ToListAsync();
             #endregion
 
             #region SelectMany
             // Select ile aynı amaca hizmet eder. Lakin, ilişkisel tablolar neticesinde gelen koleksiyonel verileri de tekilleştirip projeksiyon etmemizi sağlar. 
 
-            var urunlerrr6 = await context.Urunler.Include(u=> u.Parcalar).SelectMany(u => u.Parcalar,(u, p) => new  {  u.Id, u.Fiyat,p.ParcaAdi }).ToListAsync();
+            var urunlerrr6 = await context.Urunler.Include(u => u.Parcalar).SelectMany(u => u.Parcalar, (u, p) => new { u.Id, u.Fiyat, p.ParcaAdi }).ToListAsync();
             #endregion
 
             #endregion
+            #region GroupBy Fonksiyonu
+            //Gruplama yapmamızı sağlayan fonksiyondur.
+
+            #region Method Syntax
+            var datas1 = await context.Urunler.GroupBy(u => u.Fiyat).Select(group => new { Count = group.Count(), Fiyat = group.Key }).ToListAsync();
+            #endregion
+            #region Query Syntax
+            var datas2 = await  (from urun in context.Urunler
+                                 group urun by urun.Fiyat
+                                 into @group
+                                select new { Fiyat = @group.Key, Count = @group.Count() }).ToListAsync();
+            #endregion
+
+            #endregion
+            #region Foreach Fonksiyonu
+            // Bir sorgulama fonksiyonu değildir!
+            // Sorgulama neticesinde elde edilen koleksiyonel veriler üzerinde iterasyonel olarak dönmemizi ve 
+            // teker teker verileri elde edip işlemler yapabilmemizi sağlayan bir fonksiyondur.
+            //foreach döngüsünün metot halidir!
+
+            foreach(var item in datas1)
+            {
+
+            }
+
+            datas1.ForEach(x =>
+            {
+
+            });
+            #endregion
+
         }
         public class EticaterContext : DbContext
         {
@@ -364,7 +396,7 @@ namespace Lesson13
             }
             protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
-                modelBuilder.Entity<UrunParca>().HasKey(up=> new {up.UrunId,up.ParcaId});
+                modelBuilder.Entity<UrunParca>().HasKey(up => new { up.UrunId, up.ParcaId });
             }
         }
 
@@ -380,7 +412,7 @@ namespace Lesson13
         {
             public int Id { get; set; }
             public string ParcaAdi { get; set; }
-           
+
 
         }
         public class UrunParca
@@ -394,5 +426,6 @@ namespace Lesson13
         {
             public int Id { get; set; }
             public float Fiyat { get; set; }
+        }
     }
 }
