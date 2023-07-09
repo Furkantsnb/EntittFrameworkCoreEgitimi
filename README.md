@@ -4,4 +4,4 @@ emeği ve anlatımı için çok TEŞEKKÜR EDERİM...
 
 EF Core Dersinin oynatma listesi : https://www.youtube.com/playlist?list=PLQVXoXFVVtp1o3nq3-IXv42bPaFlzroBE
 
-Derslerin adım adım tüm notlarını konu başlıklarını inceleyerek tekrar edebilirsiniz :)
+Derslerin adım adım tüm notlarını konu başlıklarını inceleyerek tekrar edebilirsiniz  :)
